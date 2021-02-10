@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'jokes',
+
     'django_celery_results',
     'django_celery_beat',
 ]
