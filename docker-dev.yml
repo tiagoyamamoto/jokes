@@ -1,0 +1,88 @@
+version: "3.5"
+
+services:
+
+  jokes-postgres:
+    container_name: jokes-postgres
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres:/var/lib/postgresql/data/
+    networks:
+      - webnet
+
+  jokes-adminer:
+    container_name: jokes-adminer
+    image: adminer
+    ports:
+      - 7802:8080
+    networks:
+      - webnet
+
+  jokes-redis:
+    container_name: jokes-redis
+    image: redis:latest
+    networks:
+      - redisnet
+
+  jokes-wsgi:
+    container_name: jokes-wsgi
+    build: .
+    command: uwsgi --socket=:9000 --module=jokes_project.wsgi:application --processes 4 --threads 2 --py-autoreload=1
+    volumes:
+      - .:/code
+    networks:
+      - webnet
+      - redisnet
+    links:
+      - jokes-postgres
+      - jokes-redis
+
+  jokes-asgi:
+    container_name: jokes-asgi
+    build: .
+    command: daphne -b 0.0.0.0 -p 8000 jokes_project.asgi:application
+    volumes:
+      - .:/code
+    networks:
+      - webnet
+      - redisnet
+    links:
+      - jokes-postgres
+      - jokes-redis
+
+  jokes-celey:
+    container_name: jokes-celery
+    build: .
+    command: celery -A jokes_project worker -l info -B --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/code
+    networks:
+      - webnet
+      - redisnet
+    links:
+      - jokes-postgres
+      - jokes-redis
+
+  jokes-nginx:
+    container_name: jokes-nginx
+    image: nginx
+    depends_on:
+      - jokes-asgi
+      - jokes-wsgi
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - ./static:/static
+      - ./media:/media
+      - ./nginx/log:/var/log/nginx
+    networks:
+      - webnet
+    ports:
+      - 7801:80
+
+networks:
+  webnet:
+  redisnet:

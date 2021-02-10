@@ -1,0 +1,101 @@
+version: "3.5"
+
+services:
+
+  jokes-postgres:
+    container_name: jokes-postgres
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres:/var/lib/postgresql/data/
+    networks:
+      - webnet
+
+  jokes-adminer:
+    container_name: jokes-adminer
+    image: adminer
+    restart: always
+    networks:
+      - webnet
+    environment:
+      - VIRTUAL_HOST=jokes.rede5.com.br
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=ad.jokes.rede5.com.br
+      - LETSENCRYPT_EMAIL=ad@jokes.rede5.com.br
+
+  jokes-redis:
+    container_name: jokes-redis
+    image: redis:latest
+    restart: always
+    networks: 
+      - redisnet
+
+  jokes-wsgi:
+    container_name: jokes-wsgi
+    build: .
+    restart: always
+    command: uwsgi --socket=:9000 --module=jokes_project.wsgi:application --processes 32 --threads 16 --py-autoreload=1
+    volumes:
+      - .:/code
+    networks: 
+      - webnet
+      - redisnet
+    links:
+      - jokes-redis
+  
+  jokes-asgi:
+    container_name: jokes-asgi
+    build: .
+    restart: always
+    command: daphne -b 0.0.0.0 -p 8000 jokes_project.asgi:application
+    volumes:
+      - .:/code
+    networks: 
+      - webnet
+      - redisnet
+    links:
+      - jokes-redis
+
+  jokes-celey:
+    container_name: jokes-celery
+    build: .
+    restart: always
+    command: celery -A jokes_project worker -l info -B --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/code
+    networks:
+      - webnet
+      - redisnet
+    links:
+      - jokes-postgres
+      - jokes-redis
+  
+  jokes-nginx:
+    container_name: jokes-nginx
+    image: nginx
+    restart: always
+    depends_on:
+      - jokes-django-asgi
+      - jokes-django-wsgi
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - ./static:/static
+      - ./media:/media
+      - ./log:/var/log/nginx
+    networks:
+      - webnet
+    ports:
+      - 80
+      - 443
+    environment:
+      - VIRTUAL_HOST=jokes.rede5.com.br
+      - LETSENCRYPT_HOST=jokes.rede5.com.br
+      - LETSENCRYPT_EMAIL=japa@jokes.rede5.com.br
+
+networks: 
+  webnet:
+  redisnet:
