@@ -79,8 +79,8 @@ services:
     image: nginx
     restart: always
     depends_on:
-      - jokes-django-asgi
-      - jokes-django-wsgi
+      - jokes-asgi
+      - jokes-wsgi
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - ./static:/static

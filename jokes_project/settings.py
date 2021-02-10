@@ -128,7 +128,7 @@ STATIC_URL = '/static/'
 
 CELERY_RESULT_BACKEND = 'django-db'
 
-CELERY_BROKER_URL = 'redis://django-redis:6379'
+CELERY_BROKER_URL = 'redis://jokes-redis:6379'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
