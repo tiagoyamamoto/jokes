@@ -17,5 +17,22 @@
         </div>
     </div>
 </div>
+
+<script>
+    const jokesSocket = new WebSocket(
+         'ws://'
+         + window.location.host
+         + '/ws/jokes/'
+    );
+
+    console.log(window.location)
+
+    jokesSocket.onmessage = function(event){
+       const joke = event.data;
+
+       document.querySelector('#jokes').innerText = joke;
+    }
+</script>
+
 </body>
 </html>

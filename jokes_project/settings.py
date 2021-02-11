@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     'jokes',
 
+    'channels',
     'django_celery_results',
     'django_celery_beat',
 ]
@@ -75,6 +76,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'jokes_project.wsgi.application'
+ASGI_APPLICATION = 'jokes_project.asgi.application'
 
 
 # Database
@@ -125,6 +127,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('jokes-redis', 6379)]
+        }
+    }
+}
 
 CELERY_RESULT_BACKEND = 'django-db'
 
